@@ -1,69 +1,55 @@
 package com.github.dmexe.finagle.consul.client
 
-import com.github.dmexe.finagle.consul.ConsulErrors
-import com.twitter.finagle.httpx.{Method, Request => HttpRequest, Response => HttpResponse}
-import com.twitter.finagle.{Service => HttpxService}
+import com.github.dmexe.finagle.consul.common.Json
+import com.twitter.finagle.http
+import com.twitter.finagle.{Service => HttpService}
 import com.twitter.util.Future
-import org.json4s.jackson.JsonMethods._
-import org.json4s.jackson.Serialization
 
-class SessionService(httpClient: HttpxService[HttpRequest, HttpResponse]) {
+class SessionService(val client: HttpService[http.Request, http.Response]) extends HttpRequests with HttpResponses {
   import SessionService._
-
-  implicit val format = org.json4s.DefaultFormats
+  import HttpErrors.KeyNotFoundError
 
   def create(createRequest: CreateRequest): Future[CreateResponse] = {
-    val httpRequest = HttpRequest(Method.Put, "/v1/session/create")
-    httpRequest.setContentTypeJson()
-    val httpBody: String = Serialization.write(createRequest)
-    httpRequest.write(httpBody)
-    httpClient(httpRequest) flatMap { reply =>
-      reply.getStatusCode() match {
-        case 200 => Future.value(parse(reply.contentString).extract[CreateResponse])
-        case _   => Future.exception(ConsulErrors.badResponse(reply))
-      }
-    }
+    val key  = "/v1/session/create"
+    val body = Json.encode(createRequest)
+    httpPut(key, body) flatMap okResponse(200, key) flatMap decodeCreateResponse
   }
 
   def destroy(session: String): Future[Unit] = {
-    val httpRequest = HttpRequest(Method.Put, s"/v1/session/destroy/$session")
-    httpRequest.setContentTypeJson()
-    httpClient(httpRequest) flatMap { reply =>
-      reply.getStatusCode() match {
-        case 200 => Future.value(Unit)
-        case _   => Future.exception(ConsulErrors.badResponse(reply))
-      }
-    }
+    val key = s"/v1/session/destroy/$session"
+    httpPut(key) flatMap okResponse(200, key) map (_ => ())
   }
 
   def renew(session: String): Future[Option[SessionResponse]] = {
-    val httpRequest = HttpRequest(Method.Put, s"/v1/session/renew/$session")
-    httpRequest.setContentTypeJson()
-    httpClient(httpRequest) flatMap { reply =>
-      reply.getStatusCode() match {
-        case 200 => Future.value(Option(parse(reply.contentString).extract[SessionResponse]))
-        case 404 => Future.value(None)
-        case _   => Future.exception(ConsulErrors.badResponse(reply))
-      }
+    val key = s"/v1/session/renew/$session"
+    val res = httpPut(key) flatMap okResponse(200, key) flatMap decodeSessionResponse
+    res rescue {
+      case e: KeyNotFoundError => Future.value(None)
     }
   }
 
   def info(session: String): Future[Option[SessionResponse]] = {
-    val httpRequest = HttpRequest(Method.Get, s"/v1/session/info/$session")
-    httpRequest.setContentTypeJson()
-    httpClient(httpRequest) flatMap { reply =>
-      reply.getStatusCode() match {
-        case 200 => Future.value(Option(parse(reply.contentString).extract[SessionResponse]))
-        case _   => Future.exception(ConsulErrors.badResponse(reply))
-      }
+    val key = s"/v1/session/info/$session"
+    val res = httpGet(key) flatMap okResponse(200, key) flatMap decodeSessionResponse
+    res rescue {
+      case e: KeyNotFoundError => Future.value(None)
     }
+  }
+
+  private def decodeCreateResponse(res: http.Response): Future[CreateResponse] = {
+    Json.decode[CreateResponse](res.contentString)
+  }
+
+  private def decodeSessionResponse(res: http.Response): Future[Option[SessionResponse]] = {
+    val list = Json.decode[Seq[SessionResponse]](res.contentString)
+    list map (_.headOption)
   }
 }
 
 object SessionService {
-  case class CreateRequest(LockDelay: String,  Name: String, Behavior: String, TTL: String)
-  case class CreateResponse(ID: String)
-  case class SessionResponse(LockDelay: Int, Checks: Set[String], Node: String, ID: String, CreateIndex: Int, Behavior: String, TTL: String)
+  final case class CreateRequest(LockDelay: String, Name: String, Behavior: String, TTL: String)
+  final case class CreateResponse(ID: String)
+  final case class SessionResponse(LockDelay: BigInt, Checks: Set[String], Node: String, ID: String, CreateIndex: BigInt, Behavior: String, TTL: String)
 
-  def apply(httpClient: HttpxService[HttpRequest, HttpResponse]) = new SessionService(httpClient)
+  def apply(httpClient: HttpService[http.Request, http.Response]) = new SessionService(httpClient)
 }

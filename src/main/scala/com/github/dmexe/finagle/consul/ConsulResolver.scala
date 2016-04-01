@@ -4,7 +4,7 @@ import java.net.{InetSocketAddress, SocketAddress}
 import java.util.logging.Logger
 
 import com.twitter.finagle.util.DefaultTimer
-import com.twitter.finagle.{Addr, Resolver}
+import com.twitter.finagle.{Addr, Resolver, Address}
 import com.twitter.util.Var
 
 class ConsulResolver extends Resolver {
@@ -14,12 +14,12 @@ class ConsulResolver extends Resolver {
   private val timer      = DefaultTimer.twitter
   private var digest     = ""
 
-  private def addresses(hosts: String, name: String) : Option[Set[SocketAddress]] = {
+  private def addresses(hosts: String, name: String) : Option[Set[Address]] = {
     val services  = ConsulService.get(hosts).list(name)
     val newDigest = services.map(_.ID).sorted.mkString(",")
     if (newDigest != digest) {
       val newAddrs = services.map{ s =>
-        new InetSocketAddress(s.Address, s.Port).asInstanceOf[SocketAddress]
+        Address(s.Address, s.Port)
       }.toSet
       log.info(s"Consul resolver addresses=$newAddrs")
       digest = newDigest

@@ -12,9 +12,16 @@ resolvers += "twttr" at "http://maven.twttr.com/"
 
 scalacOptions ++= Seq("-unchecked", "-deprecation", "-feature")
 
+val finagleVer = "6.34.0"
+val jacksonVer = "2.7.2"
+
 libraryDependencies ++= Seq(
-  "com.twitter"    %% "finagle-core"    % "6.28.0",
-  "com.twitter"    %% "finagle-httpx"   % "6.28.0",
-  "org.json4s"     %% "json4s-jackson"  % "3.2.11",
+  "com.twitter"    %% "finagle-core"    % finagleVer,
+  "com.twitter"    %% "finagle-http"    % finagleVer,
+
+  "com.fasterxml.jackson.core"   %  "jackson-databind"     % jacksonVer,
+  "com.fasterxml.jackson.core"   %  "jackson-annotations"  % jacksonVer,
+  "com.fasterxml.jackson.module" %% "jackson-module-scala" % jacksonVer,
+
   "org.scalatest"  %% "scalatest"       % "2.2.4"   % "test"
 )

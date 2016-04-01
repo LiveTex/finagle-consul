@@ -4,7 +4,7 @@ import java.util.logging.{Level, Logger}
 
 import com.github.dmexe.finagle.consul.client.KeyService
 import com.twitter.finagle.Service
-import com.twitter.finagle.httpx.{Request, Response}
+import com.twitter.finagle.http.{Request, Response}
 import com.twitter.util._
 
 class ConsulLeaderElection(name: String, httpClient: Service[Request,Response], session: ConsulSession) {
@@ -59,7 +59,7 @@ class ConsulLeaderElection(name: String, httpClient: Service[Request,Response], 
   private def checkLock(session: String): Value = {
     val reply = Await.result(client.get(lockName).liftToTry)
     reply match {
-      case Return(Some(value)) if value.Session.contains(session) =>
+      case Return(Some(value)) if value.session.contains(session) =>
         Leader
       case Return(_) =>
         Pending
@@ -70,7 +70,7 @@ class ConsulLeaderElection(name: String, httpClient: Service[Request,Response], 
   }
 
   private def acquireLock(session: String): Value = {
-    val reply = Await.result(client.acquire(lockName, session).liftToTry)
+    val reply = Await.result(client.acquire(lockName, session, "").liftToTry)
     reply match {
       case Return(true) =>
         Leader

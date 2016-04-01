@@ -1,11 +1,11 @@
 package com.github.dmexe.finagle.consul
 
-import com.twitter.finagle.Httpx
+import com.twitter.finagle.Http
 import org.scalatest.{BeforeAndAfterAll, Matchers, WordSpecLike}
 
 class ConsulServiceSpec extends WordSpecLike with Matchers with BeforeAndAfterAll {
 
-  val client  = Httpx.newService("localhost:8500")
+  val client  = Http.newService("localhost:8500")
 
   "create/list/destroy" in {
     val session0 = new ConsulSession(client, ConsulSession.Options("spec"))
@@ -13,7 +13,7 @@ class ConsulServiceSpec extends WordSpecLike with Matchers with BeforeAndAfterAl
     val service  = new ConsulService(client)
 
     try {
-      var instances = List.empty[ConsulService.Service]
+      var instances = Seq.empty[ConsulService.Service]
 
       session0.open()
       session1.open()
