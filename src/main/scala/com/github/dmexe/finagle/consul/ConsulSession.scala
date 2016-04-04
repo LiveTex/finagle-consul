@@ -3,7 +3,7 @@ package com.github.dmexe.finagle.consul
 import java.util.concurrent.TimeUnit
 import java.util.logging.{Level, Logger}
 
-import com.github.dmexe.finagle.consul.client.SessionService
+import com.github.dmexe.finagle.consul.client.{SessionService,HttpClientFactory}
 import com.twitter.finagle.Service
 import com.twitter.finagle.http.{Request, Response}
 import com.twitter.util._
@@ -148,7 +148,7 @@ object ConsulSession {
 
   def get(hosts: String, opts: ConsulSession.Options): ConsulSession = {
     val newSession = new ConsulSession(
-      ConsulHttpClientFactory.getClient(hosts),
+      HttpClientFactory.getClient(hosts),
       opts
     )
     newSession

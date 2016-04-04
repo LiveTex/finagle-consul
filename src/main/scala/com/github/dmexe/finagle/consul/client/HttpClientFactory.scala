@@ -1,11 +1,11 @@
-package com.github.dmexe.finagle.consul
+package com.github.dmexe.finagle.consul.client
 
 import com.twitter.finagle.http.{Request, Response}
 import com.twitter.finagle.{Http, Service}
 
 import scala.collection.mutable
 
-object ConsulHttpClientFactory {
+object HttpClientFactory {
 
   type Client = Service[Request, Response]
 

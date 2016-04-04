@@ -69,7 +69,7 @@ object ConsulService {
   def get(hosts: String): ConsulService = {
     synchronized {
       val service = services.getOrElseUpdate(hosts, {
-        val newClient = ConsulHttpClientFactory.getClient(hosts)
+        val newClient = client.HttpClientFactory.getClient(hosts)
         new ConsulService(newClient)
       })
       service

@@ -1,6 +1,7 @@
 package com.github.dmexe.finagle.consul
 
 import org.scalatest.{BeforeAndAfterAll, Matchers, WordSpecLike}
+import com.github.dmexe.finagle.consul.client.HttpClientFactory
 
 class ConsulLeaderElectionSpec extends WordSpecLike with Matchers with BeforeAndAfterAll {
 
@@ -10,7 +11,7 @@ class ConsulLeaderElectionSpec extends WordSpecLike with Matchers with BeforeAnd
     val opts     = ConsulSession.Options(name = "test", ttl = 10, interval = 1, lockDelay = 10)
     val session0 = ConsulSession.get("localhost:8500", opts)
     val session1 = ConsulSession.get("localhost:8500", opts)
-    val client   = ConsulHttpClientFactory.getClient("localhost:8500")
+    val client   = HttpClientFactory.getClient("localhost:8500")
     val leader0  = new ConsulLeaderElection("spec", client, session0)
     val leader1  = new ConsulLeaderElection("spec", client, session1)
 

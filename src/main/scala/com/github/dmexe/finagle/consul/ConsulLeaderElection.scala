@@ -1,6 +1,7 @@
 package com.github.dmexe.finagle.consul
 
 import java.util.logging.{Level, Logger}
+import com.github.dmexe.finagle.consul.client.HttpClientFactory
 
 import com.github.dmexe.finagle.consul.client.KeyService
 import com.twitter.finagle.Service
@@ -104,7 +105,7 @@ object ConsulLeaderElection {
   }
 
   def get(name: String, hosts: String): ConsulLeaderElection = {
-    val client  = ConsulHttpClientFactory.getClient(hosts)
+    val client  = HttpClientFactory.getClient(hosts)
     val session = ConsulSession.get(hosts)
     val leader  = new ConsulLeaderElection(name, client, session)
     leader.start()
