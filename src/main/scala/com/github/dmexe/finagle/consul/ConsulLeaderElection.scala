@@ -39,8 +39,8 @@ class ConsulLeaderElection(name: String, httpClient: Service[Request,Response], 
   private def checkOrAcquireLock(session: String): Unit = {
     val newStatus =
       status match {
-        case Leader  => checkLock(session)
-        case Pending => acquireLock(session)
+        case Leader   => checkLock(session)
+        case _        => acquireLock(session)
       }
     if (newStatus != status) {
       logNewStatus(session, newStatus)
@@ -52,8 +52,8 @@ class ConsulLeaderElection(name: String, httpClient: Service[Request,Response], 
     if (newStatus == Leader) {
       log.info(s"Consul become a leader name=$name session=$session")
     }
-    if (newStatus == Pending) {
-      log.info(s"Consul become a slave name=$name session=$session")
+    if (newStatus == Follower) {
+      log.info(s"Consul become a follower name=$name session=$session")
     }
   }
 
@@ -63,7 +63,7 @@ class ConsulLeaderElection(name: String, httpClient: Service[Request,Response], 
       case Return(Some(value)) if value.session.contains(session) =>
         Leader
       case Return(_) =>
-        Pending
+        Follower
       case Throw(e) =>
         log.log(Level.SEVERE, e.getMessage, e)
         Pending
@@ -76,7 +76,7 @@ class ConsulLeaderElection(name: String, httpClient: Service[Request,Response], 
       case Return(true) =>
         Leader
       case Return(_) =>
-        Pending
+        Follower
       case Throw(e) =>
         log.log(Level.SEVERE, e.getMessage, e)
         Pending
@@ -101,7 +101,7 @@ class ConsulLeaderElection(name: String, httpClient: Service[Request,Response], 
 object ConsulLeaderElection {
 
   object Status extends Enumeration {
-    val Pending, Leader  = Value
+    val Pending, Follower, Leader  = Value
   }
 
   def get(name: String, hosts: String): ConsulLeaderElection = {

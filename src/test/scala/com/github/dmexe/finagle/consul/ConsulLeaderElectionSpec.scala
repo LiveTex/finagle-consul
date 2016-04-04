@@ -17,12 +17,15 @@ class ConsulLeaderElectionSpec extends WordSpecLike with Matchers with BeforeAnd
 
     try {
       leader0.start()
+      assert(leader0.getStatus == Status.Pending)
+
       Thread.sleep(2000)
       assert(leader0.getStatus == Status.Leader)
 
       leader1.start()
-      Thread.sleep(2000)
       assert(leader1.getStatus == Status.Pending)
+      Thread.sleep(2000)
+      assert(leader1.getStatus == Status.Follower)
 
       leader0.stop()
       Thread.sleep(2000)
@@ -30,7 +33,7 @@ class ConsulLeaderElectionSpec extends WordSpecLike with Matchers with BeforeAnd
 
       leader0.start()
       Thread.sleep(2000)
-      assert(leader0.getStatus == Status.Pending)
+      assert(leader0.getStatus == Status.Follower)
     } finally {
       leader0.stop()
       leader1.stop()

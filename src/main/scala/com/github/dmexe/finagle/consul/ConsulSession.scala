@@ -74,7 +74,7 @@ class ConsulSession(httpClient: Service[Request, Response], opts: ConsulSession.
   private[consul] def tickListeners(): Unit = {
     sessionId foreach { sid =>
       listeners foreach { listener =>
-        muted(() => listener.tick(sid))
+        muted(listener.tick(sid))
       }
     }
   }
@@ -84,7 +84,7 @@ class ConsulSession(httpClient: Service[Request, Response], opts: ConsulSession.
       sessionId getOrElse {
         val reply = createReq()
         log.info(s"Consul session created id=${reply.ID}")
-        listeners foreach { l => muted(() => l.start(reply.ID)) }
+        listeners foreach { l => muted(l.start(reply.ID)) }
         sessionId = Some(reply.ID)
       }
     }
@@ -94,8 +94,8 @@ class ConsulSession(httpClient: Service[Request, Response], opts: ConsulSession.
     synchronized {
       if (sessionId.isDefined) {
         sessionId foreach { id =>
-          listeners foreach { l => muted(() => l.stop(id)) }
-          muted(() => destroyReq(id))
+          listeners foreach { l => muted(l.stop(id)) }
+          muted(destroyReq(id))
           log.info(s"Consul session removed id=$id")
         }
         sessionId = None
@@ -103,9 +103,9 @@ class ConsulSession(httpClient: Service[Request, Response], opts: ConsulSession.
     }
   }
 
-  private def muted[T](f: () => T): Unit = {
+  private def muted(f: => Unit): Unit = {
     try {
-      f()
+      f
     } catch {
       case NonFatal(e) =>
         log.log(Level.SEVERE, e.getMessage, e)

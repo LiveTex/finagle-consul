@@ -1,8 +1,9 @@
 ## Finagle Consul
 
-Service discovery for Finagle cluster with Consul. This project originaly
-developed by
-[kachayev/finagle-consul](https://github.com/kachayev/finagle-consul), Unlike kachayev’s version, where services are used, here we use sessions and k/v for discovery.
+Service discovery and leader election for Finagle cluster with Consul.
+This project originaly developed by
+[kachayev/finagle-consul](https://github.com/kachayev/finagle-consul),
+Unlike kachayev’s version, where services are used, here we use sessions and k/v for discovery.
 
 ### About
 [Consul](https://www.consul.io/) is a distributed, highly available and
@@ -26,7 +27,7 @@ Add the following to your sbt build.sbt file:
 resolvers += Resolver.jcenterRepo
 
 libraryDependencies ++= Seq(
-  "com.github.dmexe" %% "finagle-consul" % "0.0.1"
+  "com.github.dmexe" %% "finagle-consul" % "0.1.0"
 )
 ```
 
@@ -45,12 +46,23 @@ val server = Http.serveAndAnnounce("consul!127.0.0.1:8500!/RandomNumber")
 val client = Http.newService("consul!127.0.0.1:8500!/RandomNumber")
 ```
 
-### TODO
+### Leader Election
 
-- [ ] Discovery for native Consul services
-- [ ] Support tags and datacenters
-- [ ] Leader election top of Consul API
-- [ ] Handle Consul API timeouts
+The Consul service may use for lead election for finagle applications, usage example:
+
+```scala
+// first, create session and lock service, which keeps session, and periodically try to lock key
+val leader = ConsulLeaderElection.get("lockName", "localhost:8500")
+
+// call method getStatus, result may be one of
+// Pending - no status information
+// Leader - current session abtained lock
+// Follower - lock obtained by another session
+
+if (leader.getStatus == Leader) {
+  ...
+}
+```
 
 ### Known issues
 
