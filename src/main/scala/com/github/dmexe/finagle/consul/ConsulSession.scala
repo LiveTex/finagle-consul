@@ -1,35 +1,44 @@
 package com.github.dmexe.finagle.consul
 
-import java.util.concurrent.{LinkedBlockingQueue, TimeUnit}
+import java.util.concurrent.TimeUnit
 import java.util.logging.{Level, Logger}
 
 import com.github.dmexe.finagle.consul.client.SessionService
 import com.twitter.finagle.Service
 import com.twitter.finagle.http.{Request, Response}
-import com.twitter.util.{Await, NonFatal, Return, Throw, Try}
+import com.twitter.util._
+import com.twitter.finagle.util.DefaultTimer
 
 class ConsulSession(httpClient: Service[Request, Response], opts: ConsulSession.Options) {
 
   import ConsulSession._
 
-  val log = Logger.getLogger(getClass.getName)
+  val log   = Logger.getLogger(getClass.getName)
+  val timer = DefaultTimer.twitter
+
   private[consul] var sessionId     = Option.empty[String]
-  private[this]   var heartbeat     = Option.empty[Thread]
   private[this]   var listeners     = List.empty[Listener]
-  private[this]   val inChannel     = new LinkedBlockingQueue[Boolean]()
   private[this]   val client        = SessionService(httpClient)
+  private[this]   var timerTask     = Option.empty[TimerTask]
 
   def start(): Unit = {
-    heartbeat.getOrElse {
-      heartbeat = Some(spawnHeartbeat(this, opts.interval))
+    timerTask.getOrElse {
+      val task = timer.schedule(Duration(0, TimeUnit.SECONDS).fromNow, Duration(opts.interval, TimeUnit.SECONDS)) {
+        log.fine("Consul heartbeat tick")
+        if (!isOpen) { open() }
+        renew()
+        tickListeners()
+      }
+      timerTask = Some(task)
     }
   }
 
   def stop(): Unit = {
-    heartbeat foreach { th =>
-      inChannel.offer(true)
-      th.join()
-      heartbeat = None
+    timerTask foreach { task =>
+      val fu = task.close()
+      Await.result(fu)
+      close()
+      timerTask = None
     }
   }
 
@@ -94,74 +103,31 @@ class ConsulSession(httpClient: Service[Request, Response], opts: ConsulSession.
     }
   }
 
-  private[this] def muted[T](f: () => T): Try[T] = {
-    Try{ f() } match {
-      case Return(value) =>
-        Return(value)
-      case Throw(e) =>
+  private def muted[T](f: () => T): Unit = {
+    try {
+      f()
+    } catch {
+      case NonFatal(e) =>
         log.log(Level.SEVERE, e.getMessage, e)
-        Throw(e)
     }
   }
 
-  private[this] def spawnHeartbeat(me: ConsulSession, interval: Int) = new Thread("Consul Heartbeat") {
-    setDaemon(true)
-    start()
-
-    override def run() {
-      var running  = true
-      var cooldown = false
-
-      me.log.info("Consul heartbeat thread started")
-
-      while(running) {
-        try {
-
-          if (!me.isOpen) {
-            if (cooldown) {
-              Thread.sleep(SESSION_HEARTBEAT_COOLDOWN)
-            }
-            cooldown = false
-            me.open()
-          }
-
-          inChannel.poll(interval, TimeUnit.SECONDS) match {
-            case true =>
-              running = false
-              me.close()
-            case false if me.isOpen =>
-              me.log.fine("Consul heartbeat tick")
-              me.renew()
-              me.tickListeners()
-            case _ =>
-              me.log.info(s"Consul session closed, reopen")
-          }
-        } catch {
-          case NonFatal(e) =>
-            log.log(Level.SEVERE, e.getMessage, e)
-            cooldown = true
-        }
-      }
-      me.log.info(s"Consul heartbeat thread stopped")
-    }
-  }
-
-  private[this] def createReq() = {
+  private def createReq() = {
     val createRequest = SessionService.CreateRequest(
       LockDelay = s"${opts.lockDelay}s", Name = opts.name, Behavior = "delete", TTL = s"${opts.ttl}s"
     )
     Await.result(client.create(createRequest))
   }
 
-  private[this] def destroyReq(session: String): Unit = {
+  private def destroyReq(session: String): Unit = {
     Await.result(client.destroy(session))
   }
 
-  private[this] def renewReq(session: String): Option[SessionService.SessionResponse] = {
+  private def renewReq(session: String): Option[SessionService.SessionResponse] = {
     Await.result(client.renew(session))
   }
 
-  private[this] def infoReq(session: String): Option[SessionService.SessionResponse] = {
+  private def infoReq(session: String): Option[SessionService.SessionResponse] = {
     Await.result(client.info(session))
   }
 }
