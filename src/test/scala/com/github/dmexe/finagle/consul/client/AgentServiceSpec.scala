@@ -3,7 +3,7 @@ package com.github.dmexe.finagle.consul.client
 import java.net.InetSocketAddress
 
 import com.github.dmexe.finagle.consul.ConsulQuery
-import com.twitter.finagle.{Http, http}
+import com.twitter.finagle.Http
 import com.twitter.util.Await
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, FlatSpec}
 
@@ -37,7 +37,7 @@ class AgentServiceSpec extends FlatSpec with BeforeAndAfterEach with BeforeAndAf
 
     // service must exists in failed list
     val failRep = Await.result(service.getUnhealthyChecks(q))
-    assert(failRep.length == 2)
+    assert(failRep.nonEmpty)
     assert(failRep.head.serviceId == "finagle:AgentServiceSpec:127.0.0.1:12345")
     assert(failRep.head.status    == "critical")
 
@@ -77,7 +77,7 @@ class AgentServiceSpec extends FlatSpec with BeforeAndAfterEach with BeforeAndAf
 
     // service must exists in failed list
     val failRep = Await.result(service.getUnhealthyChecks(q))
-    assert(failRep.length == 2)
+    assert(failRep.nonEmpty)
     assert(failRep.head.serviceId == "finagle:AgentServiceSpec:127.0.0.1:12345")
     assert(failRep.head.status    == "critical")
 

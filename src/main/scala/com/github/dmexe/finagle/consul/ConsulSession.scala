@@ -16,10 +16,10 @@ class ConsulSession(httpClient: Service[Request, Response], opts: ConsulSession.
   val log   = Logger.getLogger(getClass.getName)
   val timer = DefaultTimer.twitter
 
-  private[consul] var sessionId     = Option.empty[String]
-  private[this]   var listeners     = List.empty[Listener]
-  private[this]   val client        = SessionService(httpClient)
-  private[this]   var timerTask     = Option.empty[TimerTask]
+  private[consul] var sessionId  = Option.empty[String]
+  private[this]   var listeners  = List.empty[Listener]
+  private[this]   val client     = SessionService(httpClient)
+  private[this]   var timerTask  = Option.empty[TimerTask]
 
   def start(): Unit = {
     timerTask.getOrElse {

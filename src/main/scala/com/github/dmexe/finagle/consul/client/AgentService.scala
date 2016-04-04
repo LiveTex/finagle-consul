@@ -3,35 +3,43 @@ package com.github.dmexe.finagle.consul.client
 import java.net.InetSocketAddress
 import java.util.concurrent.TimeUnit
 
-import com.fasterxml.jackson.annotation.JsonProperty
+import com.fasterxml.jackson.annotation.{JsonIgnore, JsonProperty}
 import com.github.dmexe.finagle.consul.ConsulQuery
 import com.github.dmexe.finagle.consul.common.Json
-import com.twitter.finagle.{http, Service}
+import com.twitter.finagle.{Service, http}
 import com.twitter.util.{Duration, Future}
 
 class AgentService(val client: Service[http.Request, http.Response]) extends HttpRequests with HttpResponses {
 
   import AgentService._
 
-  def registerService(ia: InetSocketAddress, q: ConsulQuery): Future[ConsulRegisterResponse] = {
+  def mkServiceRequest(ia: InetSocketAddress, q: ConsulQuery): ConsulServiceRequest = {
     val address    = ia.getAddress.getHostAddress
     val port       = ia.getPort
     val serviceId  = s"finagle:${q.name}:$address:$port"
     val checkId    = s"service:$serviceId"
-    val key        = s"/v1/agent/service/register"
     val check      = TtlCheckRequest(ttl = formatTtl(q.ttl))
 
-    val serviceDef = ConsulServiceRequest(
-      id      = Some(serviceId),
+    ConsulServiceRequest(
+      id      = serviceId,
+      checkId = checkId,
       name    = q.name,
       tags    = q.tags,
-      address = Some(address),
-      port    = Some(port),
-      check   = Some(check)
+      address = address,
+      port    = port,
+      check   = check
     )
+  }
 
-    val body = Json.encode(serviceDef)
-    val resp = ConsulRegisterResponse(serviceId, checkId)
+  def registerService(ia: InetSocketAddress, q: ConsulQuery): Future[ConsulRegisterResponse] = {
+    val req = mkServiceRequest(ia, q)
+    registerService(req)
+  }
+
+  def registerService(req: ConsulServiceRequest): Future[ConsulRegisterResponse] = {
+    val key  = s"/v1/agent/service/register"
+    val body = Json.encode(req)
+    val resp = ConsulRegisterResponse(req.id, req.checkId)
     httpPut(key, body) flatMap okResponse(200, key) map (_ => resp)
   }
 
@@ -40,9 +48,9 @@ class AgentService(val client: Service[http.Request, http.Response]) extends Htt
     httpPut(key, "") flatMap okResponse(200, key) map (_ => ())
   }
 
-  def passHealthCheck(checkId: String): Future[Unit] = {
+  def passHealthCheck(checkId: String): Future[String] = {
     val key = s"/v1/agent/check/pass/$checkId"
-    httpGet(key) flatMap okResponse(200, key) map (_ => ())
+    httpGet(key) flatMap okResponse(200, key) map (_ => checkId)
   }
 
   def getHealthServices(q: ConsulQuery): Future[Seq[ConsulHealthResponse]] = {
@@ -89,17 +97,19 @@ object AgentService {
 
   final case class ConsulServiceRequest(
     @JsonProperty("ID")
-    id:      Option[String],
+    id:      String,
+    @JsonIgnore
+    checkId: String,
     @JsonProperty("Name")
     name:    String,
     @JsonProperty("Tags")
     tags:    Set[String],
     @JsonProperty("Address")
-    address: Option[String],
+    address: String,
     @JsonProperty("Port")
-    port:    Option[Int],
+    port:    Int,
     @JsonProperty("Check")
-    check:   Option[ConsulCheckRequest]
+    check:   ConsulCheckRequest
   )
 
   final case class ConsulRegisterResponse (

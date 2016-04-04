@@ -1,13 +1,13 @@
 package com.github.dmexe.finagle.consul
 
 import com.twitter.finagle.http.{Method, Request, Response, Status}
-import com.twitter.finagle.{ListeningServer, Http, Service}
+import com.twitter.finagle.{Http, ListeningServer, Service}
 import com.twitter.util.{Await, Future}
-import org.scalatest.{BeforeAndAfterAll, Matchers, WordSpecLike}
+import org.scalatest.{BeforeAndAfterAll, FlatSpec, Matchers, WordSpecLike}
 
-class E2ESpec extends WordSpecLike with Matchers with BeforeAndAfterAll {
+class E2ESpec extends FlatSpec with Matchers with BeforeAndAfterAll {
 
-  "servers and client communication" in {
+   "E2E" should "servers and client communication" in {
 
     val service0 = new Service[Request, Response] {
       def apply(req: Request) = Future.value(Response(req.version, Status.Ok))
@@ -54,6 +54,7 @@ class E2ESpec extends WordSpecLike with Matchers with BeforeAndAfterAll {
       if (server1 != null) server1.close()
       if (server2 != null) server2.close()
       if (server3 != null) server3.close()
+      if (client  != null) client.close()
     }
   }
 }

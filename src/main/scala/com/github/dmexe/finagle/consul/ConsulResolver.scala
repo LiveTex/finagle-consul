@@ -1,43 +1,49 @@
 package com.github.dmexe.finagle.consul
 
-import java.net.{InetSocketAddress, SocketAddress}
-import java.util.logging.Logger
-
+import com.github.dmexe.finagle.consul.client.{AgentService, HttpClientFactory}
+import com.twitter.logging.Logger
 import com.twitter.finagle.util.DefaultTimer
-import com.twitter.finagle.{Addr, Resolver, Address}
-import com.twitter.util.Var
+import com.twitter.finagle.{Addr, Address, Resolver}
+import com.twitter.util.{Await, Var}
+
+object ConsulResolver {
+  final case class InvalidAddressError(addr: String) extends IllegalArgumentException(s"Invalid address '$addr'")
+}
 
 class ConsulResolver extends Resolver {
+
+  import ConsulResolver._
+
   val scheme = "consul"
 
-  private val log        = Logger.getLogger(getClass.getName)
-  private val timer      = DefaultTimer.twitter
-  private var digest     = ""
+  private val log    = Logger.get(getClass)
+  private val timer  = DefaultTimer.twitter
+  private var digest = Seq.empty[String]
 
-  private def addresses(hosts: String, name: String) : Option[Set[Address]] = {
-    val services  = ConsulService.get(hosts).list(name)
-    val newDigest = services.map(_.ID).sorted.mkString(",")
-    if (newDigest != digest) {
-      val newAddrs = services.map{ s =>
-        Address(s.Address, s.Port)
-      }.toSet
-      log.info(s"Consul resolver addresses=$newAddrs")
+  private def addresses(agent: AgentService, q: ConsulQuery) : Seq[Address] = {
+    val services  = Await.result(agent.getHealthServices(q)) map (_.service)
+    val newDigest = services.map{s => s"${s.address}:${s.port}"}.sorted
+
+    if (digest != newDigest) {
       digest = newDigest
-      Some(newAddrs)
-    } else {
-      None
+      log.debug(s"Consul catalog lookup, addresses: $newDigest")
+    }
+
+    services map { service =>
+      Address(service.address, service.port)
     }
   }
 
   def addrOf(hosts: String, query: ConsulQuery): Var[Addr] =
     Var.async(Addr.Pending: Addr) { u =>
-      val maybeAddrs = addresses(hosts, query.name)
-      maybeAddrs foreach { addrs =>
-        u() = Addr.Bound(addrs)
-      }
+      val client = HttpClientFactory.getClient(hosts)
+      val agent  = new AgentService(client)
 
-      timer.schedule(query.ttl.fromNow, query.ttl) {
-        addresses(hosts, query.name) foreach { addrs =>
+      u() = Addr.Bound(addresses(agent, query).toSet)
+
+      timer.schedule(query.ttl) {
+        val addrs = addresses(agent, query).toSet
+        if (addrs.nonEmpty) {
           u() = Addr.Bound(addrs)
         }
       }
@@ -47,11 +53,9 @@ class ConsulResolver extends Resolver {
     case Array(hosts, query) =>
       ConsulQuery.decodeString(query) match {
         case Some(q) => addrOf(hosts, q)
-        case None =>
-          throw new IllegalArgumentException(s"Invalid address '$arg'")
+        case None    => throw new InvalidAddressError(arg)
       }
-
     case _ =>
-      throw new IllegalArgumentException(s"Invalid address '$arg'")
+      throw new InvalidAddressError(arg)
   }
 }
