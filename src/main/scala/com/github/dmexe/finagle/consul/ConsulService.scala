@@ -41,7 +41,7 @@ class ConsulService(httpClient: HttpxService[Request, Response]) {
     Json.encode[Service](service)
   }
 
-  private def decodeServices(body: Seq[KeyService.Key]): Future[Seq[Service]] = {
+  private def decodeServices(body: Seq[KeyService.ConsulKey]): Future[Seq[Service]] = {
     val decoded =
       body.foldLeft(Seq.empty[Future[Service]]) { (memo, s) =>
         s.value match {
