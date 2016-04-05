@@ -8,6 +8,8 @@ import com.twitter.finagle.Service
 import com.twitter.finagle.http.{Request, Response}
 import com.twitter.util._
 
+/*
+
 class ConsulLeaderElection(name: String, httpClient: Service[Request,Response], session: ConsulSession) {
 
   import ConsulLeaderElection.Status._
@@ -113,3 +115,4 @@ object ConsulLeaderElection {
   }
 
 }
+*/
