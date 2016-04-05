@@ -1,43 +1,44 @@
 package com.github.dmexe.finagle.consul
 
 import com.twitter.finagle.Http
-import org.scalatest.{BeforeAndAfterAll, Matchers, WordSpecLike}
+import org.scalatest.{BeforeAndAfterAll, FlatSpec, Matchers, WordSpecLike}
 
-class ConsulSessionSpec extends WordSpecLike with Matchers with BeforeAndAfterAll {
+class ConsulSessionSpec extends FlatSpec with Matchers with BeforeAndAfterAll {
 
-  val client  = Http.newService("localhost:8500")
+  val client = Http.newService("localhost:8500")
 
-  "open/reopen/close" in {
+  override def afterAll: Unit = {
+    client.close()
+  }
+
+  "ConsulSession" should "open/close" in {
     val session = new ConsulSession(client, ConsulSession.Options("spec", ttl = 10, interval = 1, lockDelay = 1))
 
     try {
-      session.start()
-      Thread.sleep(5000)
-      val Some(reply0) = session.info()
+      Thread.sleep(2000)
+      val Some(reply) = session.get
+      assert(reply.nonEmpty)
       session.close()
-
-      Thread.sleep(5000)
-      val Some(reply1) = session.info()
-      assert(reply0.ID != reply1.ID)
-
     } finally {
-      session.stop()
+      session.close()
     }
   }
 
-  "heartbeat lost" in {
-    val session = new ConsulSession(client, ConsulSession.Options("spec", ttl = 10, interval = 30, lockDelay = 1))
+  "ConsulSession" should "heartbeat lost" in {
+    val session = new ConsulSession(client, ConsulSession.Options("spec", ttl = 10, interval = 20, lockDelay = 1))
 
     try {
-      session.start()
-      Thread.sleep(5000)
-      assert(session.info().isDefined)
+      Thread.sleep(3000)
+      val Some(id0) = session.get
+      assert(id0.nonEmpty)
 
       Thread.sleep(20000)
-      assert(session.info().isEmpty)
+      val Some(id1) = session.get
+      assert(id1.nonEmpty)
+      assert(id1 != id0)
 
     } finally {
-      session.stop()
+      session.close()
     }
   }
 }

@@ -5,14 +5,14 @@ import java.util.Base64
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.github.dmexe.finagle.consul.client.HttpErrors.KeyNotFoundError
 import com.github.dmexe.finagle.consul.common.Json
-import com.twitter.finagle.{http, Service => HttpService}
-import com.twitter.util.Future
+import com.twitter.finagle.{Service, http}
+import com.twitter.util.{Await, Future}
 
-class KeyService(val client: HttpService[http.Request, http.Response]) extends HttpRequests with HttpResponses {
+class KeyService(val client: Service[http.Request, http.Response]) extends HttpRequests with HttpResponses {
 
   import KeyService._
 
-  def get(path: String): Future[Option[Key]] = {
+  def get(path: String): Future[Option[ConsulKey]] = {
     val key = keyName(path)
     val res = httpGet(key) flatMap okResponse(200, key) flatMap getKeys map (_.headOption)
     res rescue {
@@ -20,7 +20,7 @@ class KeyService(val client: HttpService[http.Request, http.Response]) extends H
     }
   }
 
-  def getAll[T](path: String): Future[Seq[Key]] = {
+  def getAll[T](path: String): Future[Seq[ConsulKey]] = {
     val key = keyName(path, recurse = true)
     val res = httpGet(key) flatMap okResponse(200, key) flatMap getKeys
     res rescue {
@@ -28,7 +28,7 @@ class KeyService(val client: HttpService[http.Request, http.Response]) extends H
     }
   }
 
-  def put(path: String, body: String): Future[Option[Key]] = {
+  def put(path: String, body: String): Future[Option[ConsulKey]] = {
     val key = keyName(path)
     httpPut(key, body) flatMap okResponse(200, key) flatMap { _ => get(path) }
   }
@@ -75,7 +75,7 @@ class KeyService(val client: HttpService[http.Request, http.Response]) extends H
     }
   }
 
-  private def decodeAndCopyKeyValue(key: Key): Key = {
+  private def decodeAndCopyKeyValue(key: ConsulKey): ConsulKey = {
     key.value match {
       case Some(value) =>
         val newValue = new String(Base64.getDecoder.decode(value), "UTF-8")
@@ -84,8 +84,8 @@ class KeyService(val client: HttpService[http.Request, http.Response]) extends H
     }
   }
 
-  private def getKeys(resp: http.Response): Future[Seq[Key]] = {
-    Json.decode[Seq[Key]](resp.contentString) map { keys =>
+  private def getKeys(resp: http.Response): Future[Seq[ConsulKey]] = {
+    Json.decode[Seq[ConsulKey]](resp.contentString) map { keys =>
       keys.map(decodeAndCopyKeyValue)
     }
   }
@@ -96,8 +96,7 @@ class KeyService(val client: HttpService[http.Request, http.Response]) extends H
 }
 
 object KeyService {
-
-  final case class Key(
+  final case class ConsulKey(
     @JsonProperty("Session")
     session:     Option[String],
     @JsonProperty("CreateIndex")
@@ -113,6 +112,4 @@ object KeyService {
     @JsonProperty("Value")
     value:       Option[String]
   )
-
-  def apply(client: HttpService[http.Request, http.Response]) = new KeyService(client)
 }

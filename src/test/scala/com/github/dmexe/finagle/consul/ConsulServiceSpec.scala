@@ -3,6 +3,8 @@ package com.github.dmexe.finagle.consul
 import com.twitter.finagle.Http
 import org.scalatest.{BeforeAndAfterAll, Matchers, WordSpecLike}
 
+/*
+
 class ConsulServiceSpec extends WordSpecLike with Matchers with BeforeAndAfterAll {
 
   val client  = Http.newService("localhost:8500")
@@ -53,3 +55,4 @@ class ConsulServiceSpec extends WordSpecLike with Matchers with BeforeAndAfterAl
     Thread.sleep(1000)
   }
 }
+*/

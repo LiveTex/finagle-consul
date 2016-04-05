@@ -15,6 +15,15 @@ trait HttpRequests {
     client(req)
   }
 
+  def httpGet(path: String, params: Seq[(String,String)]): Future[http.Response] = {
+    if (params.isEmpty) {
+      httpGet(path)
+    } else {
+      val query = http.Request.queryString(params.toList: _*)
+      httpGet(s"$path$query")
+    }
+  }
+
   def httpPut(path: String, body: String): Future[http.Response] = {
     val req  = http.Request(http.Method.Put, path)
     req.setContentTypeJson()
