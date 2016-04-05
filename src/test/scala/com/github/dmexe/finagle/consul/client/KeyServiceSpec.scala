@@ -2,7 +2,7 @@ package com.github.dmexe.finagle.consul.client
 
 import com.twitter.finagle.{Http, http}
 import com.twitter.util.Await
-import org.scalatest.WordSpec
+import org.scalatest.{BeforeAndAfterAll, WordSpec}
 import com.github.dmexe.finagle.consul.common.Json
 
 object KeyServiceSpec {
@@ -10,12 +10,16 @@ object KeyServiceSpec {
   final case class Session(ID: String)
 }
 
-class KeyServiceSpec extends WordSpec {
+class KeyServiceSpec extends WordSpec with BeforeAndAfterAll {
 
   import KeyServiceSpec._
 
   val httpClient = Http.newService("localhost:8500")
   val service    = new KeyService(httpClient)
+
+  override def afterAll = {
+    httpClient.close()
+  }
 
   "simple create/get/destroy" in {
     val path  = "test/key0"

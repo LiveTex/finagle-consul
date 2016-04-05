@@ -13,10 +13,10 @@ object HttpClientFactory {
 
   def getClient(hosts: String): Client = {
     synchronized {
-      val client = clients.getOrElseUpdate(hosts, {
-        Http.newService(hosts)
-      })
+      val client = clients.getOrElseUpdate(hosts, getClientUncached(hosts))
       client
     }
   }
+
+  def getClientUncached(hosts: String): Client = Http.newService(hosts)
 }

@@ -1,14 +1,19 @@
 package com.github.dmexe.finagle.consul
 
-import com.github.dmexe.finagle.consul.client.HttpClientFactory
+import com.twitter.finagle.Http
 import org.scalatest.{BeforeAndAfterAll, FlatSpec, Matchers}
 
 class ConsulLockSpec extends FlatSpec with Matchers with BeforeAndAfterAll {
 
   import ConsulLock.Status._
 
+  val client = Http.newService("localhost:8500")
+
+  override def afterAll = {
+    client.close()
+  }
+
   "ConsulLock" should "lock/unlock" in {
-    val client   = HttpClientFactory.getClient("localhost:8500")
     val opts     = ConsulSession.Options(name = "test", ttl = 10, interval = 1, lockDelay = 10)
 
     val lock0 = new ConsulLock("spec", client, Some(opts))
@@ -29,7 +34,6 @@ class ConsulLockSpec extends FlatSpec with Matchers with BeforeAndAfterAll {
     } finally {
       lock0.close()
       lock1.close()
-      client.close()
     }
   }
 }
