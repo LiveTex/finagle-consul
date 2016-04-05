@@ -13,10 +13,15 @@ class AgentService(val client: Service[http.Request, http.Response]) extends Htt
 
   import AgentService._
 
+  def mkServicePrefix(name: String): String = {
+    s"finagle:$name"
+  }
+
   def mkServiceRequest(ia: InetSocketAddress, q: ConsulQuery): ConsulServiceRequest = {
     val address    = ia.getAddress.getHostAddress
     val port       = ia.getPort
-    val serviceId  = s"finagle:${q.name}:$address:$port"
+    val prefix     = mkServicePrefix(q.name)
+    val serviceId  = s"$prefix:$address:$port"
     val checkId    = s"service:$serviceId"
     val check      = TtlCheckRequest(ttl = formatTtl(q.ttl))
 

@@ -25,6 +25,7 @@ class ConsulAnnouncer extends Announcer {
   private val timer         = DefaultTimer.twitter
   private val log           = Logger.get(getClass)
   val maxHeartbeatFrequency = Duration(10, TimeUnit.SECONDS)
+  val cleanupFrequency      = Duration(30, TimeUnit.SECONDS)
 
   def announce(ia: InetSocketAddress, hosts: String, q: ConsulQuery): Future[Announcement] = {
     val freq   = q.ttl / 2
@@ -32,6 +33,7 @@ class ConsulAnnouncer extends Announcer {
 
     val agent  = new AgentService(HttpClientFactory.getClient(hosts))
     val regReq = agent.mkServiceRequest(ia, q)
+    val prefix = agent.mkServicePrefix(q.name)
     val reply  = agent.registerService(regReq) flatMap { _ => agent.passHealthCheck(regReq.checkId) }
 
     reply map { checkId =>
@@ -53,12 +55,30 @@ class ConsulAnnouncer extends Announcer {
         Await.result(reply)
       }
 
+      val cleanupTask = timer.schedule(cleanupFrequency) {
+        val checks = Await.result(agent.getUnhealthyChecks(q)) filter (_.serviceId.startsWith(prefix))
+        if (checks.nonEmpty) {
+          log.info(s"Found ${checks.length} dead service(s)")
+
+          val ops    = checks map { check =>
+            agent.deregisterService(check.serviceId) ensure {
+              log.info(s"Dead service ${check.serviceId} deregistered")
+            }
+          }
+          Await.result(Future.collect(ops))
+        }
+      }
+
       new Announcement {
+        private def complete(): Unit =
+          log.info(s"Successfully deregistered consul service: ${regReq.id}")
+
         override def unannounce(): Future[Unit] = {
           // sequence stopping the heartbeat and deleting the service registration
-          heartbeatTask.close() flatMap { _ => agent.deregisterService(regReq.id) } ensure {
-            log.info(s"Successfully deregistered consul service: ${regReq.id}")
-          }
+          heartbeatTask.close()
+            .ensure(cleanupTask.close())
+            .ensure(agent.deregisterService(regReq.id))
+            .ensure(complete())
         }
       }
     }
