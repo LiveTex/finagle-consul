@@ -15,7 +15,7 @@ class KeyServiceSpec extends WordSpec {
   import KeyServiceSpec._
 
   val httpClient = Http.newService("localhost:8500")
-  val service    = KeyService(httpClient)
+  val service    = new KeyService(httpClient)
 
   "simple create/get/destroy" in {
     val path  = "test/key0"

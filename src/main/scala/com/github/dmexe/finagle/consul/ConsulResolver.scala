@@ -26,7 +26,7 @@ class ConsulResolver extends Resolver {
 
     if (digest != newDigest) {
       digest = newDigest
-      log.debug(s"Consul catalog lookup, addresses: $newDigest")
+      log.info(s"Consul catalog lookup, service: ${q.name}, addresses: $newDigest")
     }
 
     services map { service =>

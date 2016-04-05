@@ -5,8 +5,8 @@ import java.util.Base64
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.github.dmexe.finagle.consul.client.HttpErrors.KeyNotFoundError
 import com.github.dmexe.finagle.consul.common.Json
-import com.twitter.finagle.{http, Service}
-import com.twitter.util.Future
+import com.twitter.finagle.{Service, http}
+import com.twitter.util.{Await, Future}
 
 class KeyService(val client: Service[http.Request, http.Response]) extends HttpRequests with HttpResponses {
 
@@ -96,7 +96,6 @@ class KeyService(val client: Service[http.Request, http.Response]) extends HttpR
 }
 
 object KeyService {
-
   final case class ConsulKey(
     @JsonProperty("Session")
     session:     Option[String],
@@ -113,6 +112,4 @@ object KeyService {
     @JsonProperty("Value")
     value:       Option[String]
   )
-
-  def apply(client: Service[http.Request, http.Response]) = new KeyService(client)
 }

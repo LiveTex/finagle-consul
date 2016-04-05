@@ -35,7 +35,7 @@ class ConsulAnnouncer extends Announcer {
     val reply  = agent.registerService(regReq) flatMap { _ => agent.passHealthCheck(regReq.checkId) }
 
     reply map { checkId =>
-      log.debug(s"Successfully registered consul service: ${regReq.id}")
+      log.info(s"Successfully registered consul service: ${regReq.id}")
 
       val heartbeatFrequency = freq.min(maxHeartbeatFrequency)
       log.debug(s"Heartbeat frequency: $heartbeatFrequency")
@@ -56,10 +56,9 @@ class ConsulAnnouncer extends Announcer {
       new Announcement {
         override def unannounce(): Future[Unit] = {
           // sequence stopping the heartbeat and deleting the service registration
-          for {
-            _ <- heartbeatTask.close()
-            _ <- agent.deregisterService(regReq.id)
-          } yield {}
+          heartbeatTask.close() flatMap { _ => agent.deregisterService(regReq.id) } ensure {
+            log.info(s"Successfully deregistered consul service: ${regReq.id}")
+          }
         }
       }
     }
