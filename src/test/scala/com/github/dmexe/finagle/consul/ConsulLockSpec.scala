@@ -5,8 +5,6 @@ import org.scalatest.{BeforeAndAfterAll, FlatSpec, Matchers}
 
 class ConsulLockSpec extends FlatSpec with Matchers with BeforeAndAfterAll {
 
-  import ConsulLock.Status._
-
   val client = Http.newService("localhost:8500")
 
   override def afterAll = {
@@ -22,15 +20,17 @@ class ConsulLockSpec extends FlatSpec with Matchers with BeforeAndAfterAll {
     val lock1 = new ConsulLock("spec", client, Some(opts))
     Thread.sleep(2000)
 
+    var re0: Boolean = false
+    var re1: Boolean = false
+
     try {
-      assert(lock0.get == Leader)
-      assert(lock1.get == Follower)
+      re0 = lock0.tryLock {
+        re1 = lock1.tryLock { () }
+      }
 
-      lock0.close()
+      assert(re0)
+      assert(!re1)
 
-      Thread.sleep(2000)
-
-      assert(lock1.get == Leader)
     } finally {
       lock0.close()
       lock1.close()
