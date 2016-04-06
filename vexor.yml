@@ -1,9 +1,0 @@
-language: scala
-
-jdk: oraclejdk8
-scala: 2.11.8
-
-before_install:
-- curl -sL -o consul.zip https://releases.hashicorp.com/consul/0.6.4/consul_0.6.4_linux_amd64.zip
-- unzip consul.zip
-- nohup ./consul agent -dev
