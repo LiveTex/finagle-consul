@@ -6,12 +6,7 @@ import org.scalatest.{BeforeAndAfterAll, Matchers, WordSpec}
 
 trait Spec extends WordSpec with Matchers with BeforeAndAfterAll {
 
-  val httpClient = Http.client.newService("localhost:8500")
-
-  override def afterAll = {
-    //httpClient.close()
-    println("!! 2")
-  }
+  def httpClient = SpecHelper.httpClient
 
   def Deferable[A](context: SpecHelper.DeferTracker => A) = {
     val dt  = new SpecHelper.DeferTracker()
@@ -22,6 +17,8 @@ trait Spec extends WordSpec with Matchers with BeforeAndAfterAll {
 }
 
 object SpecHelper {
+  lazy val httpClient = Http.newService("localhost:8500")
+
   class DeferTracker() {
     class LazyVal[A](val value:() => A)
 

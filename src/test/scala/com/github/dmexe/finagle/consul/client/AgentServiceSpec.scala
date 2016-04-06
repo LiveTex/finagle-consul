@@ -16,7 +16,7 @@ class AgentServiceSpec extends Spec {
     "register/deregister service" in Deferable { defer =>
       // register service
       val regRep = Await.result(service.registerService(ia, q))
-      defer(service.deregisterService(regRep.serviceId))
+      defer(Await.result(service.deregisterService(regRep.serviceId)))
 
       assert(regRep.serviceId == "finagle:AgentServiceSpec:127.0.0.1:12345")
       assert(regRep.checkId   == "service:finagle:AgentServiceSpec:127.0.0.1:12345")
@@ -40,15 +40,12 @@ class AgentServiceSpec extends Spec {
       assert(getRep.head.service.id.get  == "finagle:AgentServiceSpec:127.0.0.1:12345")
       assert(getRep.head.service.address == "127.0.0.1")
       assert(getRep.head.service.port == 12345)
-
-      // deregister service
-      Await.result(service.deregisterService(regRep.serviceId))
     }
 
     "mark service as unhealthy" in Deferable { defer =>
       // register service
       val regRep = Await.result(service.registerService(ia, q))
-      defer(service.deregisterService(regRep.serviceId))
+      defer(Await.result(service.deregisterService(regRep.serviceId)))
 
       // pass health check for service
       Await.result(service.passHealthCheck(regRep.checkId))
@@ -58,7 +55,7 @@ class AgentServiceSpec extends Spec {
       assert(getRep.length == 1)
 
       // sleep ttl + 1s
-      Thread.sleep(q.ttl.inMillis + 1000)
+      Thread.sleep(q.ttl.inMillis + 3000)
 
       // get health services, it must be empty because service is unhealthy
       getRep = Await.result(service.getHealthServices(q))
@@ -69,9 +66,6 @@ class AgentServiceSpec extends Spec {
       assert(failRep.nonEmpty)
       assert(failRep.head.serviceId == "finagle:AgentServiceSpec:127.0.0.1:12345")
       assert(failRep.head.status    == "critical")
-
-      // deregister service
-      Await.result(service.deregisterService(regRep.serviceId))
     }
   }
 

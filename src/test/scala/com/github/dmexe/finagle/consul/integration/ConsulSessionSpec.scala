@@ -22,7 +22,7 @@ class ConsulSessionSpec extends Spec {
       val Some(id0) = session.get
       assert(id0.nonEmpty)
 
-      Thread.sleep(20000)
+      Thread.sleep(30000)
       val Some(id1) = session.get
       assert(id1.nonEmpty)
       assert(id1 != id0)

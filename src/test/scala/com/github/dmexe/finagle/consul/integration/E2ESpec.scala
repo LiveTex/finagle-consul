@@ -25,7 +25,6 @@ class E2ESpec extends Spec {
 
       val httpClient = Http.newService("consul!localhost:8500!/E2ESpec?ttl=1")
       defer(httpClient.close())
-
       val req = Request(Method.Get, "/")
 
       // live: 0,1
