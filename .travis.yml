@@ -25,5 +25,7 @@ before_install:
 - unzip consul.zip
 - ./consul agent -dev &
 
+sbt_args: -J-Xmx2g
+
 script:
 - sbt ++$TRAVIS_SCALA_VERSION test
