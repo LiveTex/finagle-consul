@@ -2,7 +2,7 @@ language: scala
 sudo: false
 
 scala:
-- 2.10.5
+- 2.10.6
 - 2.11.8
 
 jdk:
@@ -23,7 +23,7 @@ before_cache:
 before_install:
 - curl -sL -o consul.zip https://releases.hashicorp.com/consul/0.6.4/consul_0.6.4_linux_amd64.zip
 - unzip consul.zip
-- ./consul agent -dev &
+- ./consul agent -dev > /dev/null &
 
 sbt_args: -J-Xmx2g
 

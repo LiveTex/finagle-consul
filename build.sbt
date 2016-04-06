@@ -12,6 +12,8 @@ resolvers += "twttr" at "http://maven.twttr.com/"
 
 scalacOptions ++= Seq("-unchecked", "-deprecation", "-feature")
 
+testOptions in Test += Tests.Argument("-oF")
+
 val finagleVer = "6.34.0"
 val jacksonVer = "2.7.2"
 
