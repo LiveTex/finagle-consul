@@ -9,7 +9,7 @@ class ConsulSessionSpec extends Spec {
       val session = new ConsulSession(client, ConsulSession.Options("spec", ttl = 10, interval = 1, lockDelay = 1))
       defer(session.close())
 
-      Thread.sleep(2000)
+      Thread.sleep(5000)
       val Some(reply) = session.get
       assert(reply.nonEmpty)
     }
@@ -18,7 +18,7 @@ class ConsulSessionSpec extends Spec {
       val session = new ConsulSession(client, ConsulSession.Options("spec", ttl = 10, interval = 20, lockDelay = 1))
       defer(session.close())
 
-      Thread.sleep(3000)
+      Thread.sleep(5000)
       val Some(id0) = session.get
       assert(id0.nonEmpty)
 
