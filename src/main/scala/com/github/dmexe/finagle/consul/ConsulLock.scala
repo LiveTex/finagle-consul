@@ -6,7 +6,8 @@ import com.twitter.finagle.{Service, http}
 import com.twitter.logging.Logger
 import com.twitter.util._
 
-class ConsulLock(lockName: String, httpClient: Service[http.Request,http.Response], opts: Option[SessionOptions]) {
+class ConsulLock(lockName: String, httpClient: Service[http.Request,http.Response], opts: Option[SessionOptions])
+  extends java.io.Closeable {
 
   private var sessionId   = Option.empty[String]
   private val log         = Logger.get(getClass)
