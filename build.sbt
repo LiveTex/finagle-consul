@@ -18,6 +18,7 @@ val jacksonVer = "2.7.2"
 libraryDependencies ++= Seq(
   "com.twitter"    %% "finagle-core"    % finagleVer,
   "com.twitter"    %% "finagle-http"    % finagleVer,
+  "commons-codec"  %  "commons-codec"   % "1.10",
 
   "com.fasterxml.jackson.core"   %  "jackson-databind"     % jacksonVer,
   "com.fasterxml.jackson.core"   %  "jackson-annotations"  % jacksonVer,

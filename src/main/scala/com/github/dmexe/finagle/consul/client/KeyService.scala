@@ -1,6 +1,6 @@
 package com.github.dmexe.finagle.consul.client
 
-import java.util.Base64
+import org.apache.commons.codec.binary.Base64
 
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.github.dmexe.finagle.consul.client.HttpErrors.KeyNotFoundError
@@ -78,7 +78,7 @@ class KeyService(val client: Service[http.Request, http.Response]) extends HttpR
   private def decodeAndCopyKeyValue(key: ConsulKey): ConsulKey = {
     key.value match {
       case Some(value) =>
-        val newValue = new String(Base64.getDecoder.decode(value), "UTF-8")
+        val newValue = new String(Base64.decodeBase64(value))
         key.copy(value = Some(newValue))
       case None => key
     }
