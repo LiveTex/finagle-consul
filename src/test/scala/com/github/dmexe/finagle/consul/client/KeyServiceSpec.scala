@@ -15,7 +15,7 @@ class KeyServiceSpec extends Spec {
 
   import KeyServiceSpec._
 
-  val kv = new KeyService(client)
+  val kv = new KeyService(httpClient)
 
   "KeyService" should {
 
@@ -74,8 +74,8 @@ class KeyServiceSpec extends Spec {
       createSession.setContentString(sessionBody)
       createSession.headerMap.add("Host", "localhost")
 
-      val sessionReply0 = Await.result(client(createSession))
-      val sessionReply1 = Await.result(client(createSession))
+      val sessionReply0 = Await.result(httpClient(createSession))
+      val sessionReply1 = Await.result(httpClient(createSession))
 
       val session0 = Await.result(Json.decode[Session](sessionReply0.contentString))
       val session1 = Await.result(Json.decode[Session](sessionReply1.contentString))

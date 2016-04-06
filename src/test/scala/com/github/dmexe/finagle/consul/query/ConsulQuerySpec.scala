@@ -1,7 +1,6 @@
 package com.github.dmexe.finagle.consul.query
 
-import com.github.dmexe.finagle.consul.ConsulQuery
-import com.github.dmexe.finagle.consul.Spec
+import com.github.dmexe.finagle.consul.{ConsulQuery, Spec}
 
 class ConsulQuerySpec extends Spec {
 

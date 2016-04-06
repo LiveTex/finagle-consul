@@ -1,4 +1,4 @@
-package com.github.dmexe.finagle.consul
+package com.github.dmexe.finagle.consul.integration
 
 import com.github.dmexe.finagle.consul.{ConsulSession, Spec}
 
@@ -6,7 +6,7 @@ class ConsulSessionSpec extends Spec {
 
   "ConsulSession" should {
     "sucessfuly opened and closed" in Deferable { defer =>
-      val session = new ConsulSession(client, ConsulSession.Options("spec", ttl = 10, interval = 1, lockDelay = 1))
+      val session = new ConsulSession(httpClient, ConsulSession.Options("spec", ttl = 10, interval = 1, lockDelay = 1))
       defer(session.close())
 
       Thread.sleep(5000)
@@ -15,7 +15,7 @@ class ConsulSessionSpec extends Spec {
     }
 
     "restore session when heartbeat lost" in Deferable { defer =>
-      val session = new ConsulSession(client, ConsulSession.Options("spec", ttl = 10, interval = 20, lockDelay = 1))
+      val session = new ConsulSession(httpClient, ConsulSession.Options("spec", ttl = 10, interval = 20, lockDelay = 1))
       defer(session.close())
 
       Thread.sleep(5000)

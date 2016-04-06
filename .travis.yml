@@ -27,4 +27,4 @@ before_install:
 sbt_args: -J-Xmx2g
 
 script:
-- sbt ++$TRAVIS_SCALA_VERSION test
+- sbt ++$TRAVIS_SCALA_VERSION "+ test"

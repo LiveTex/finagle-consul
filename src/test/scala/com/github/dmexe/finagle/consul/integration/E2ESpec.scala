@@ -23,13 +23,13 @@ class E2ESpec extends Spec {
 
       Thread.sleep(2000)
 
-      val client = Http.newService("consul!localhost:8500!/E2ESpec?ttl=1")
-      defer(client.close())
+      val httpClient = Http.newService("consul!localhost:8500!/E2ESpec?ttl=1")
+      defer(httpClient.close())
 
       val req = Request(Method.Get, "/")
 
       // live: 0,1
-      Await.result(client(req))
+      Await.result(httpClient(req))
 
       // live 1
       server0.close()
@@ -40,7 +40,7 @@ class E2ESpec extends Spec {
       Thread.sleep(2000)
 
       // live 0,2
-      Await.result(client(req))
+      Await.result(httpClient(req))
       // live 2
       server1.close()
 
@@ -50,7 +50,7 @@ class E2ESpec extends Spec {
       Thread.sleep(2000)
 
       // live 2,3
-      Await.result(client(req))
+      Await.result(httpClient(req))
       Thread.sleep(1000)
     }
   }

@@ -8,7 +8,7 @@ import com.twitter.util.Await
 
 class AgentServiceSpec extends Spec {
 
-  val service    = new AgentService(client)
+  val service    = new AgentService(httpClient)
   val ia         = new InetSocketAddress("localhost", 12345)
   val q          = ConsulQuery.decodeString("/AgentServiceSpec?ttl=2&tag=tagName").get
 

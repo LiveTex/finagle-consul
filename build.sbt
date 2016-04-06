@@ -1,4 +1,5 @@
 scalaVersion := "2.11.7"
+crossScalaVersions := Seq("2.10.6", "2.11.7")
 
 organization := "com.github.dmexe"
 
