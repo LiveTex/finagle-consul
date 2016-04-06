@@ -13,7 +13,7 @@ class ConsulQuerySpec extends Spec {
           assert(name          == "name")
           assert(ttl.toString  == "45.seconds")
           assert(tags          == Set("prod", "trace"))
-          assert(dc.contains("DC"))
+          assert(dc            == Some("DC"))
       }
     }
 
