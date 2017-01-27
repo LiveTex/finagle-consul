@@ -13,14 +13,10 @@ class AgentService(val client: Service[http.Request, http.Response]) extends Htt
 
   import AgentService._
 
-  def mkServicePrefix(name: String): String = {
-    s"finagle:$name"
-  }
-
   def mkServiceRequest(ia: InetSocketAddress, q: ConsulQuery): ConsulServiceRequest = {
     val address    = q.proxy.getOrElse(ia).getAddress.getHostAddress
     val port       = q.proxy.getOrElse(ia).getPort
-    val prefix     = mkServicePrefix(q.name)
+    val prefix     = q.name
     val serviceId  = s"$prefix:$address:$port"
     val checkId    = s"service:$serviceId"
     val check      = TtlCheckRequest(ttl = formatTtl(q.ttl), criticalTtl = formatTtl(q.ttl))
@@ -61,7 +57,9 @@ class AgentService(val client: Service[http.Request, http.Response]) extends Htt
   def getHealthServices(q: ConsulQuery): Future[Seq[ConsulHealthResponse]] = {
     val params = Seq(datacenterParam(q), tagParams(q)).flatten :+ ("passing", "true")
     val key    = s"/v1/health/service/${q.name}"
-    httpGet(key, params) flatMap okResponse(200, key) flatMap decodeHealthServices
+    httpGet(key, params)
+      .flatMap(okResponse(200, key))
+      .flatMap(decodeHealthServices)
   }
 
   def getUnhealthyChecks(q: ConsulQuery): Future[Seq[ConsulHealthStateResponse]] = {

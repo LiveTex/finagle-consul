@@ -18,8 +18,8 @@ class AgentServiceSpec extends Spec {
       val regRep = Await.result(service.registerService(ia, q))
       defer(Await.result(service.deregisterService(regRep.serviceId)))
 
-      assert(regRep.serviceId == "finagle:AgentServiceSpec:127.0.0.1:12345")
-      assert(regRep.checkId   == "service:finagle:AgentServiceSpec:127.0.0.1:12345")
+      assert(regRep.serviceId == "AgentServiceSpec:127.0.0.1:12345")
+      assert(regRep.checkId   == "service:AgentServiceSpec:127.0.0.1:12345")
 
       // get health services, it must be empty because service is unhealthy
       var getRep = Await.result(service.getHealthServices(q))
@@ -28,7 +28,7 @@ class AgentServiceSpec extends Spec {
       // service must exists in failed list
       val failRep = Await.result(service.getUnhealthyChecks(q))
       assert(failRep.nonEmpty)
-      assert(failRep.head.serviceId == "finagle:AgentServiceSpec:127.0.0.1:12345")
+      assert(failRep.head.serviceId == "AgentServiceSpec:127.0.0.1:12345")
       assert(failRep.head.status    == "critical")
 
       // pass health check for service
@@ -37,7 +37,7 @@ class AgentServiceSpec extends Spec {
       // service must be healthy
       getRep = Await.result(service.getHealthServices(q))
       assert(getRep.length == 1)
-      assert(getRep.head.service.id.get  == "finagle:AgentServiceSpec:127.0.0.1:12345")
+      assert(getRep.head.service.id.get  == "AgentServiceSpec:127.0.0.1:12345")
       assert(getRep.head.service.address == "127.0.0.1")
       assert(getRep.head.service.port == 12345)
     }
@@ -64,7 +64,7 @@ class AgentServiceSpec extends Spec {
       // service must exists in failed list
       val failRep = Await.result(service.getUnhealthyChecks(q))
       assert(failRep.nonEmpty)
-      assert(failRep.head.serviceId == "finagle:AgentServiceSpec:127.0.0.1:12345")
+      assert(failRep.head.serviceId == "AgentServiceSpec:127.0.0.1:12345")
       assert(failRep.head.status    == "critical")
     }
   }

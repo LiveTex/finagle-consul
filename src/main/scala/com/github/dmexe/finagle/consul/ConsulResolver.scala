@@ -2,7 +2,6 @@ package com.github.dmexe.finagle.consul
 
 import com.github.dmexe.finagle.consul.client.{ AgentService, HttpClientFactory }
 import com.twitter.logging.Logger
-import com.twitter.finagle.util.DefaultTimer
 import com.twitter.finagle.{ Addr, Address, Resolver }
 import com.twitter.util.{ Future, _ }
 
