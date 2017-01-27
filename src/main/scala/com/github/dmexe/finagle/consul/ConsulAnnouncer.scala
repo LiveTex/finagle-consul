@@ -3,12 +3,13 @@ package com.github.dmexe.finagle.consul
 import java.net.InetSocketAddress
 import java.util.concurrent.TimeUnit
 
+import com.github.dmexe.finagle.consul.client.AgentService.ConsulServiceRequest
 import com.github.dmexe.finagle.consul.client.HttpErrors.KeyNotFoundError
-import com.github.dmexe.finagle.consul.client.{AgentService, HttpClientFactory}
+import com.github.dmexe.finagle.consul.client.{ AgentService, HttpClientFactory }
 import com.twitter.finagle.util.DefaultTimer
-import com.twitter.finagle.{Announcement, Announcer}
+import com.twitter.finagle.{ Announcement, Announcer }
 import com.twitter.logging.Logger
-import com.twitter.util.{Await, Duration, Future}
+import com.twitter.util.{ Await, Duration, Future, JavaTimer }
 
 object ConsulAnnouncer {
   def badAnnouncement(addr: String): Future[Announcement] = {
@@ -22,7 +23,7 @@ class ConsulAnnouncer extends Announcer {
 
   override val scheme: String = "consul"
 
-  private val timer         = DefaultTimer.twitter
+  private val timer         = new JavaTimer(isDaemon = true, Some("ConsulAnnouncer-timer"))
   private val log           = Logger.get(getClass)
   val maxHeartbeatFrequency = Duration(10, TimeUnit.SECONDS)
   val cleanupFrequency      = Duration(30, TimeUnit.SECONDS)
@@ -33,7 +34,6 @@ class ConsulAnnouncer extends Announcer {
 
     val agent  = new AgentService(HttpClientFactory.getClient(hosts))
     val regReq = agent.mkServiceRequest(ia, q)
-    val prefix = agent.mkServicePrefix(q.name)
     val reply  = agent.registerService(regReq) flatMap { _ => agent.passHealthCheck(regReq.checkId) }
 
     reply map { checkId =>
@@ -55,20 +55,6 @@ class ConsulAnnouncer extends Announcer {
         Await.result(reply)
       }
 
-      val cleanupTask = timer.schedule(cleanupFrequency) {
-        val checks = Await.result(agent.getUnhealthyChecks(q)) filter (_.serviceId.startsWith(prefix))
-        if (checks.nonEmpty) {
-          log.info(s"Found ${checks.length} dead service(s)")
-
-          val ops    = checks map { check =>
-            agent.deregisterService(check.serviceId) ensure {
-              log.info(s"Dead service ${check.serviceId} deregistered")
-            }
-          }
-          Await.result(Future.collect(ops))
-        }
-      }
-
       new Announcement {
         private def complete(): Unit =
           log.info(s"Successfully deregistered consul service: ${regReq.id}")
@@ -76,7 +62,6 @@ class ConsulAnnouncer extends Announcer {
         override def unannounce(): Future[Unit] = {
           // sequence stopping the heartbeat and deleting the service registration
           heartbeatTask.close()
-            .ensure(cleanupTask.close())
             .ensure(agent.deregisterService(regReq.id))
             .ensure(complete())
         }

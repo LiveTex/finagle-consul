@@ -1,10 +1,10 @@
 package com.github.dmexe.finagle.consul
 
-import com.github.dmexe.finagle.consul.client.{AgentService, HttpClientFactory}
+import com.github.dmexe.finagle.consul.client.{ AgentService, HttpClientFactory }
 import com.twitter.logging.Logger
 import com.twitter.finagle.util.DefaultTimer
-import com.twitter.finagle.{Addr, Address, Resolver}
-import com.twitter.util.{Await, Var}
+import com.twitter.finagle.{ Addr, Address, Resolver }
+import com.twitter.util.{ Future, _ }
 
 object ConsulResolver {
   final case class InvalidAddressError(addr: String) extends IllegalArgumentException(s"Invalid address '$addr'")
@@ -17,34 +17,43 @@ class ConsulResolver extends Resolver {
   val scheme = "consul"
 
   private val log    = Logger.get(getClass)
-  private val timer  = DefaultTimer.twitter
-  private var digest = Seq.empty[String]
+  private val timer  = new JavaTimer(isDaemon = true, Some("ConsulResolver-timer"))
+  private var addr: Addr = Addr.Pending
 
-  private def addresses(agent: AgentService, q: ConsulQuery) : Seq[Address] = {
-    val services  = Await.result(agent.getHealthServices(q)) map (_.service)
-    val newDigest = services.map{s => s"${s.address}:${s.port}"}.sorted
+  private def addresses(agent: AgentService, q: ConsulQuery) : Set[Address] = {
+    val services = Await.result(agent.getHealthServices(q)).map(_.service)
+    services
+      .map(service => Address(service.address, service.port))
+      .toSet
+  }
 
-    if (digest != newDigest) {
-      digest = newDigest
-      log.info(s"Consul catalog lookup, service: ${q.name}, addresses: $newDigest")
-    }
-
-    services map { service =>
-      Address(service.address, service.port)
+  private def resolve(addrs: Set[Address]): Addr = {
+    if (addrs.isEmpty) {
+      Addr.Neg
+    } else {
+      Addr.Bound(addrs)
     }
   }
 
   def addrOf(hosts: String, query: ConsulQuery): Var[Addr] =
-    Var.async(Addr.Pending: Addr) { u =>
+    Var.async(addr: Addr) { u =>
       val client = HttpClientFactory.getClient(hosts)
       val agent  = new AgentService(client)
+      addr = resolve(addresses(agent, query))
+      u() = addr
 
-      u() = Addr.Bound(addresses(agent, query).toSet)
-
-      timer.schedule(query.ttl) {
-        val addrs = addresses(agent, query).toSet
-        if (addrs.nonEmpty) {
-          u() = Addr.Bound(addrs)
+      val updateTask = timer.schedule(query.ttl) {
+        val newAddr = resolve(addresses(agent, query))
+        if (addr != newAddr) {
+          addr = newAddr
+          log.info(s"Consul catalog lookup, service: ${query.name}, addresses: $newAddr")
+          u() = addr
+        }
+      }
+      new Closable {
+        override def close(deadline: Time): Future[Unit] = {
+          client.close()
+            .ensure(updateTask.close())
         }
       }
     }

@@ -19,7 +19,7 @@ object EchoServer {
       }
     }
 
-    val server = Http.server.serveAndAnnounce("consul!localhost:8500!/EchoServer?ttl=5", s":$serverPort", service)
+    val server = Http.server.serveAndAnnounce("consul!192.168.4.14:3004!/EchoServer?ttl=5", s":$serverPort", service)
     sys.addShutdownHook {
       Await.result(server.close())
     }

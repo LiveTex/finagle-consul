@@ -18,12 +18,12 @@ class AgentService(val client: Service[http.Request, http.Response]) extends Htt
   }
 
   def mkServiceRequest(ia: InetSocketAddress, q: ConsulQuery): ConsulServiceRequest = {
-    val address    = ia.getAddress.getHostAddress
-    val port       = ia.getPort
+    val address    = q.proxy.getOrElse(ia).getAddress.getHostAddress
+    val port       = q.proxy.getOrElse(ia).getPort
     val prefix     = mkServicePrefix(q.name)
     val serviceId  = s"$prefix:$address:$port"
     val checkId    = s"service:$serviceId"
-    val check      = TtlCheckRequest(ttl = formatTtl(q.ttl))
+    val check      = TtlCheckRequest(ttl = formatTtl(q.ttl), criticalTtl = formatTtl(q.ttl))
 
     ConsulServiceRequest(
       id      = serviceId,
@@ -97,7 +97,9 @@ object AgentService {
 
   final case class TtlCheckRequest(
     @JsonProperty("TTL")
-    ttl: String
+    ttl: String,
+    @JsonProperty("DeregisterCriticalServiceAfter")
+    criticalTtl: String
   ) extends ConsulCheckRequest
 
   final case class ConsulServiceRequest(
