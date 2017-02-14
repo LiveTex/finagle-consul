@@ -5,7 +5,7 @@ organization := "com.github.dmexe"
 
 name := "finagle-consul"
 
-version := "1.0.0"
+version := "1.0.1"
 
 licenses += ("MIT", url("http://opensource.org/licenses/MIT"))
 
@@ -29,3 +29,15 @@ libraryDependencies ++= Seq(
 
   "org.scalatest"  %% "scalatest"       % "2.2.4"   % "test"
 )
+
+
+val nexusUrl = "http://sonatype-nexus.livetex.ru"
+publishMavenStyle := true
+publishArtifact in Test := false
+pomIncludeRepository := { _ => false }
+publishTo := {
+  if (isSnapshot.value)
+    Some("snapshots" at nexusUrl + "/nexus/content/repositories/snapshots/")
+  else
+    Some("releases"  at nexusUrl + "/nexus/content/repositories/releases/")
+}
