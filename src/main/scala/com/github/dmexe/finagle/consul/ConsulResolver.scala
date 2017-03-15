@@ -17,7 +17,6 @@ class ConsulResolver extends Resolver {
 
   private val log    = Logger.get(getClass)
   private val timer  = new JavaTimer(isDaemon = true, Some("ConsulResolver-timer"))
-  private var addr: Addr = Addr.Pending
 
   private def addresses(agent: AgentService, q: ConsulQuery) : Set[Address] = {
     val services = Await.result(agent.getHealthServices(q)).map(_.service)
@@ -34,28 +33,28 @@ class ConsulResolver extends Resolver {
     }
   }
 
-  def addrOf(hosts: String, query: ConsulQuery): Var[Addr] =
-    Var.async(addr: Addr) { u =>
+  def addrOf(hosts: String, query: ConsulQuery): Var[Addr] = {
+    Var.async(Addr.Pending: Addr) { u =>
       val client = HttpClientFactory.getClient(hosts)
-      val agent  = new AgentService(client)
-      addr = resolve(addresses(agent, query))
-      u() = addr
+      val agent = new AgentService(client)
+      var curAddr = resolve(addresses(agent, query))
+      u.update(curAddr)
 
       val updateTask = timer.schedule(query.ttl) {
         val newAddr = resolve(addresses(agent, query))
-        if (addr != newAddr) {
-          addr = newAddr
+        if (curAddr != newAddr) {
+          curAddr = newAddr
           log.info(s"Consul catalog lookup, service: ${query.name}, addresses: $newAddr")
-          u() = addr
+          u.update(curAddr)
         }
       }
       new Closable {
         override def close(deadline: Time): Future[Unit] = {
-          client.close()
-            .ensure(updateTask.close())
+          Closable.sequence(updateTask, client).close(deadline)
         }
       }
     }
+  }
 
   def bind(arg: String): Var[Addr] = arg.split("!") match {
     case Array(hosts, query) =>
