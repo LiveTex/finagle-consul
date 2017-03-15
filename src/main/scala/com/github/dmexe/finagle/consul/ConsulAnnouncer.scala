@@ -3,13 +3,11 @@ package com.github.dmexe.finagle.consul
 import java.net.InetSocketAddress
 import java.util.concurrent.TimeUnit
 
-import com.github.dmexe.finagle.consul.client.AgentService.ConsulServiceRequest
 import com.github.dmexe.finagle.consul.client.HttpErrors.KeyNotFoundError
 import com.github.dmexe.finagle.consul.client.{ AgentService, HttpClientFactory }
-import com.twitter.finagle.util.DefaultTimer
 import com.twitter.finagle.{ Announcement, Announcer }
 import com.twitter.logging.Logger
-import com.twitter.util.{ Await, Duration, Future, JavaTimer }
+import com.twitter.util._
 
 object ConsulAnnouncer {
   def badAnnouncement(addr: String): Future[Announcement] = {
@@ -61,9 +59,10 @@ class ConsulAnnouncer extends Announcer {
 
         override def unannounce(): Future[Unit] = {
           // sequence stopping the heartbeat and deleting the service registration
-          heartbeatTask.close()
-            .ensure(agent.deregisterService(regReq.id))
-            .ensure(complete())
+          Closable.sequence(
+            heartbeatTask,
+            Closable.make(t => agent.deregisterService(regReq.id).within(timer, t - Time.now))
+          ).close().ensure(complete())
         }
       }
     }
