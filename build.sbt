@@ -5,7 +5,7 @@ organization := "com.github.dmexe"
 
 name := "finagle-consul"
 
-version := "1.0.0"
+version := "1.0.2"
 
 licenses += ("MIT", url("http://opensource.org/licenses/MIT"))
 
