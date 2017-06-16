@@ -1,7 +1,7 @@
 scalaVersion := "2.11.8"
 crossScalaVersions := Seq("2.11.8")
 
-organization := "com.github.dmexe"
+organization := "ru.livetex"
 
 name := "finagle-consul"
 
