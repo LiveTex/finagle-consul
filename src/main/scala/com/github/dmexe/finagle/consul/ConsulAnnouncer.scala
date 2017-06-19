@@ -6,8 +6,8 @@ import java.util.concurrent.TimeUnit
 import com.github.dmexe.finagle.consul.client.HttpErrors.KeyNotFoundError
 import com.github.dmexe.finagle.consul.client.{ AgentService, HttpClientFactory }
 import com.twitter.finagle.{ Announcement, Announcer }
-import com.twitter.logging.Logger
 import com.twitter.util._
+import org.slf4j.LoggerFactory
 
 object ConsulAnnouncer {
   def badAnnouncement(addr: String): Future[Announcement] = {
@@ -22,7 +22,7 @@ class ConsulAnnouncer extends Announcer {
   override val scheme: String = "consul"
 
   private val timer         = new JavaTimer(isDaemon = true, Some("ConsulAnnouncer-timer"))
-  private val log           = Logger.get(getClass)
+  private val log           = LoggerFactory.getLogger(getClass)
   val maxHeartbeatFrequency = Duration(10, TimeUnit.SECONDS)
   val cleanupFrequency      = Duration(30, TimeUnit.SECONDS)
 

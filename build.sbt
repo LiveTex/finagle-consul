@@ -23,6 +23,8 @@ libraryDependencies ++= Seq(
   "com.twitter"    %% "finagle-http"    % finagleVer,
   "commons-codec"  %  "commons-codec"   % "1.10",
 
+  "org.slf4j" % "slf4j-api" % "1.7.21",
+
   "com.fasterxml.jackson.core"   %  "jackson-databind"     % jacksonVer,
   "com.fasterxml.jackson.core"   %  "jackson-annotations"  % jacksonVer,
   "com.fasterxml.jackson.module" %% "jackson-module-scala" % jacksonVer,

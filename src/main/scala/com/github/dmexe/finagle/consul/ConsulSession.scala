@@ -3,14 +3,14 @@ package com.github.dmexe.finagle.consul
 import java.util.concurrent.TimeUnit
 
 import com.github.dmexe.finagle.consul.client.SessionService
-import com.twitter.finagle.{Service, http}
+import com.twitter.finagle.{ Service, http }
 import com.twitter.finagle.util.DefaultTimer
-import com.twitter.logging.Logger
 import com.twitter.util._
+import org.slf4j.{ Logger, LoggerFactory }
 
 class ConsulSession(httpClient: Service[http.Request, http.Response], opts: ConsulSession.Options) {
 
-  val log   = Logger.get(getClass)
+  val log   = LoggerFactory.getLogger(getClass)
   val timer = DefaultTimer.twitter
 
   private var sessionId     = Option.empty[String]

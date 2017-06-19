@@ -1,9 +1,9 @@
 package com.github.dmexe.finagle.consul
 
 import com.github.dmexe.finagle.consul.client.{ AgentService, HttpClientFactory }
-import com.twitter.logging.Logger
 import com.twitter.finagle.{ Addr, Address, Resolver }
 import com.twitter.util.{ Future, _ }
+import org.slf4j.LoggerFactory
 
 object ConsulResolver {
   final case class InvalidAddressError(addr: String) extends IllegalArgumentException(s"Invalid address '$addr'")
@@ -15,7 +15,7 @@ class ConsulResolver extends Resolver {
 
   val scheme = "consul"
 
-  private val log    = Logger.get(getClass)
+  private val log    = LoggerFactory.getLogger(getClass)
   private val timer  = new JavaTimer(isDaemon = true, Some("ConsulResolver-timer"))
 
   private def addresses(agent: AgentService, q: ConsulQuery) : Set[Address] = {

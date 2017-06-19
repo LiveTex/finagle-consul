@@ -1,16 +1,16 @@
 package com.github.dmexe.finagle.consul
 
-import com.github.dmexe.finagle.consul.client.{HttpClientFactory, KeyService}
-import com.github.dmexe.finagle.consul.ConsulSession.{Options => SessionOptions}
-import com.twitter.finagle.{Service, http}
-import com.twitter.logging.Logger
+import com.github.dmexe.finagle.consul.client.{ HttpClientFactory, KeyService }
+import com.github.dmexe.finagle.consul.ConsulSession.{ Options => SessionOptions }
+import com.twitter.finagle.{ Service, http }
 import com.twitter.util._
+import org.slf4j.LoggerFactory
 
 class ConsulLock(lockName: String, httpClient: Service[http.Request,http.Response], opts: Option[SessionOptions])
   extends java.io.Closeable {
 
   private var sessionId   = Option.empty[String]
-  private val log         = Logger.get(getClass)
+  private val log         = LoggerFactory.getLogger(getClass)
   private val lockKey     = s"finagle/lock/$lockName"
   private val kv          = new KeyService(httpClient)
   private val sessionOpts = opts.getOrElse(SessionOptions(name = lockName)).copy(handler = handle)
