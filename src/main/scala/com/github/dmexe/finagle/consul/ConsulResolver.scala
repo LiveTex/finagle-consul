@@ -59,7 +59,11 @@ class ConsulResolver extends Resolver {
   def bind(arg: String): Var[Addr] = arg.split("!") match {
     case Array(hosts, query) =>
       ConsulQuery.decodeString(query) match {
-        case Some(q) => addrOf(hosts, q)
+        case Some(q) =>
+          addrOf(hosts, q).map { addr =>
+            log.debug(s"Bind ${q.name} to $addr")
+            addr
+          }
         case None    => throw new InvalidAddressError(arg)
       }
     case _ =>
