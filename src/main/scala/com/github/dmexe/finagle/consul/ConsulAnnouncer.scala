@@ -46,7 +46,7 @@ class ConsulAnnouncer extends Announcer {
         val reply = agent.passHealthCheck(checkId) rescue {
           // Avoid net split desync
           case e: KeyNotFoundError => {
-            log.warning(s"Health check $checkId was not found, try to register service ${regReq.id}")
+            log.warn(s"Health check $checkId was not found, try to register service ${regReq.id}")
             agent.registerService(regReq)
           }
         }

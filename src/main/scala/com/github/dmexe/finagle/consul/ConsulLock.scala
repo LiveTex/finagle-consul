@@ -37,7 +37,7 @@ class ConsulLock(lockName: String, httpClient: Service[http.Request,http.Respons
   private def acquireLock(sessionId: String): Boolean = {
     val reply = kv.acquire(lockKey, sessionId, "") rescue {
       case NonFatal(e) =>
-        log.error(e, e.getMessage)
+        log.error(e.getMessage, e)
         Future.value(false)
     } map { v =>
       if (v) log.info(s"Lock acquired lock=$lockName id=$sessionId")
@@ -51,7 +51,7 @@ class ConsulLock(lockName: String, httpClient: Service[http.Request,http.Respons
       case true =>
         log.info(s"Lock released lock=$lockName id=$sessionId")
       case false =>
-        log.warning(s"Fail to release lock, locked by another session lock=$lockName id=$session")
+        log.warn(s"Fail to release lock, locked by another session lock=$lockName id=$session")
     }
     Await.result(reply)
   }
