@@ -5,7 +5,7 @@ organization := "ru.livetex"
 
 name := "finagle-consul"
 
-version := "1.0.7"
+version := "1.0.8-SNAPSHOT"
 
 licenses += ("MIT", url("http://opensource.org/licenses/MIT"))
 
@@ -16,7 +16,7 @@ scalacOptions ++= Seq("-unchecked", "-deprecation", "-feature")
 testOptions in Test += Tests.Argument("-oF")
 
 val finagleVer = "18.4.0"
-val jacksonVer = "2.7.2"
+val jacksonVer = "2.9.5"
 
 libraryDependencies ++= Seq(
   "com.twitter"    %% "finagle-core"    % finagleVer,
