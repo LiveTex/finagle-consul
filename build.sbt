@@ -5,7 +5,7 @@ organization := "ru.livetex"
 
 name := "finagle-consul"
 
-version := "1.0.8-SNAPSHOT"
+version := "1.0.8"
 
 licenses += ("MIT", url("http://opensource.org/licenses/MIT"))
 
